@@ -7,7 +7,7 @@ const verifyJWT = asyncHandler(async(req, _, next) => {
     try {
         const token = req.cookies?.accessToken || req.header("Authorization")?.replace("Bearer ", "") //get token from the logged in user
 
-        console.log(`The Token ${token}`);
+        // console.log(`The Token ${token}`);
         if(!token) { // if no token is present it means the user is not logged in 
             throw new ApiError(401, "Unauthorized Request")
         }

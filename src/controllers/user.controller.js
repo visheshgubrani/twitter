@@ -121,10 +121,10 @@ const getUser = asyncHandler(async(req, res) => {
     if (!(username || fullName)) {
         throw new ApiError(400, "Please Enter the username or the name of the user")
     }
-
+    //do lowercase either in schema or put regex here after fullname
     const user = await User.findOne({
-        $or: [{username}, {fullName}]
-    }).select("-password -refreshToken")
+        $or: [{username}, {fullName}] //{fullName: {$regex: new RegExp(`^${fullName}$`, 'i')}}
+    }).select("-password -refreshToken -email")
 
     if (!user) {
         throw new ApiError(400, "User does not exists")
@@ -136,8 +136,8 @@ const getUser = asyncHandler(async(req, res) => {
 })
 
 const updateUser = asyncHandler(async(req, res) => {
-    const {fullName, email} = req.body
-    if (!(fullName || email )) {
+    const {fullName, email, username} = req.body
+    if (!(fullName || email || username)) {
         throw new ApiError(400, "All fields are requried")
     }
     
@@ -146,7 +146,8 @@ const updateUser = asyncHandler(async(req, res) => {
         {
             $set: {
                 fullName,
-                email
+                email,
+                username
             }
         },
         {new: true}
@@ -161,6 +162,10 @@ const updatePassword = asyncHandler(async(req, res) => {
     const {oldPassword, newPassword} = req.body
     if (!(oldPassword && newPassword)) {
         throw new ApiError(400, "please provide old and new password")
+    }
+    
+    if (oldPassword === newPassword) {
+        throw new ApiError(400, "Old and new passwords cannot be same")
     }
 
     const user = await User.findById(req.user?._id)
@@ -253,5 +258,12 @@ const updateCoverImg = asyncHandler(async(req, res) => {
 export {
     registerUser,
     loginUser,
-    logoutUser
+    logoutUser,
+    getUser,
+    updateUser,
+    updatePassword,
+    updateCoverImg,
+    updateProfileImg,
+    getCurrentUser,
+
 }
