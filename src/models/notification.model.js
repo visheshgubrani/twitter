@@ -16,6 +16,10 @@ const notificationSchema = new Schema({
         enum: ["follow", "like"],
         required: true
     },
+    post: {
+        type: Schema.Types.ObjectId,
+        ref: "Post"
+    },
     seen: {
         type: Boolean,
         default: false
