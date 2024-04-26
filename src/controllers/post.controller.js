@@ -64,13 +64,18 @@ const updatePost = asyncHandler(async(req, res) => {
     if (!post) {
         throw new ApiError(400, "Failed to fetch post")
     }
+
+    if (req.user._id.toString() !== post.user.toString()) { //csl it
+        throw new ApiError(403, "Unauthorized Request")
+    }
+
     const {content} = req.body
     if (!content) {
         throw new ApiError(400, "Please Enter the content")
     }
 
-    if (req.user.postImage && req.user.postImage !== "") {
-        const oldPostImage = req.user.postImage.split("/").pop().split(".")[0] //console log
+    if (post.postImage && post.postImage !== "") {
+        const oldPostImage = post.postImage.split("/").pop().split(".")[0] //console log
         await destroyImg(oldPostImage)
     }
 
@@ -86,11 +91,37 @@ const updatePost = asyncHandler(async(req, res) => {
         {
             content,
             postImage
-        }
+        },
+        {new: true}
     )
     return res.status(200).json(
         new ApiResponse(200, "Post Updated Successfully", updatedPost)
     ) 
 })
 
-export {addPost, getAllPosts}
+const deletePost = asyncHandler(async(req, res) => {
+    const {id} = req.params
+    const post = await Post.findById(id)
+
+    if (!post) {
+        throw new ApiError(400, "Post not found")
+    }
+
+    if (req.user._id.toString() !== post.user.toString()) { //csl it
+        throw new ApiError(403, "Unauthorized Request")
+    }
+
+    const deletedPost = await Post.findByIdAndDelete(id)
+
+    if (!deletedPost) {
+        throw new ApiError(400, "failed to delete the post")
+    }
+    
+    return res.status(200).json(
+        new ApiResponse(200, "Deleted the post successfully", {})
+    )
+})
+
+
+
+export {addPost, getAllPosts, getPost, updatePost, deletePost}
