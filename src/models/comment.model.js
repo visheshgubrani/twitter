@@ -12,6 +12,10 @@ const commentSchema = new Schema({
     post: {
         type: Schema.Types.ObjectId,
         ref: "Post"
+    },
+    likesCount: {
+        type: Number,
+        default: 0
     }
 }, {timestamps: true})
 
