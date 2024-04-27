@@ -1,3 +1,4 @@
+import { Comment } from "../models/comment.model";
 import { Like } from "../models/like.model";
 import { Post } from "../models/post.model";
 import { ApiError } from "../utils/ApiError";
@@ -29,7 +30,7 @@ const toggleLike = asyncHandler(async(req, res) => {
     }
     
     // Like the post
-    const newLike = await Like.create({
+    await Like.create({
         post: postId,
         likedBy: userId
     })
@@ -47,7 +48,46 @@ const toggleLike = asyncHandler(async(req, res) => {
 })
 
 const toggleCommentLike = asyncHandler(async(req, res) => {
+    const {commentId} = req.params
+    const userId = req.user?._id
 
+    const comment = await Comment.findById(commentId)
+
+    if (!comment) {
+        throw new ApiError(400, "comment doesn't exists")
+    }
+
+    const existingLike = await Like.findOne({
+        comment: commentId,
+        likedBy: userId
+    })
+
+    if (existingLike) {
+        // Unlike
+        await Like.findByIdAndDelete(existingLike._id)
+        await Post.findByIdAndUpdate(commentId, {$inc: {likesCount: -1}})
+        return res.status(200).json(
+            new ApiResponse(200, "Disliked Success", {})
+        )
+    }
+
+    await Like.create({
+        comment: commentId,
+        likedBy: userId
+    })
+
+    await Comment.findByIdAndUpdate(
+        commentId,
+        {
+            $inc: {
+                likesCount: 1
+            }
+        }
+    )
+
+    return res.status(200).json(
+        new ApiResponse(200, "Liked the comment successfully", {})
+    )
 })
 
-export {toggleLike}
+export {toggleLike, toggleCommentLike}
