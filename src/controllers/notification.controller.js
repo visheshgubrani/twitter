@@ -4,7 +4,7 @@ import { ApiResponse } from "../utils/ApiResponse.js"
 import { asyncHandler } from "../utils/asyncHandler.js"
 
 const getNotifications = asyncHandler(async(req, res) => {
-    const userId = req.user._id
+    const userId = req.user?._id
     if (!userId) {
         throw new ApiError(400, "User not authenticated")
     }

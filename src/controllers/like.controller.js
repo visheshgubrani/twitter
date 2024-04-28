@@ -65,7 +65,7 @@ const toggleCommentLike = asyncHandler(async(req, res) => {
     if (existingLike) {
         // Unlike
         await Like.findByIdAndDelete(existingLike._id)
-        await Post.findByIdAndUpdate(commentId, {$inc: {likesCount: -1}})
+        await Comment.findByIdAndUpdate(commentId, {$inc: {likesCount: -1}})
         return res.status(200).json(
             new ApiResponse(200, "Disliked Success", {})
         )

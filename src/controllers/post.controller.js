@@ -1,9 +1,10 @@
-import { Post } from "../models/post.model.js";
+import { Post, Post } from "../models/post.model.js";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { uploadOnCloudinary } from "../utils/cloudinary.js";
 import { destroyImg } from "../utils/destroyImg.js";
+import { Like } from "../models/like.model.js";
 
 const addPost = asyncHandler(async(req, res) => {
     const {content} = req.body
@@ -122,6 +123,37 @@ const deletePost = asyncHandler(async(req, res) => {
     )
 })
 
+const getLikes = asyncHandler(async(req, res) => {
+    const {postId} = req.params
+    const page = parseInt(req.query.page, 10) || 1
+    const limit = parseInt(req.query.limit, 10) || 10
+    const skip = (page - 1) * limit
 
+    const Post = await Post.findById(postId)
 
-export {addPost, getAllPosts, getPost, updatePost, deletePost}
+    if (!postId) {
+        throw new ApiError(400, "Post not found")
+    }
+
+    const likes = await Like.find({
+        post: postId
+    }).skip(skip).limit(limit)
+
+    const total = await Like.countDocuments({post: postId})
+
+    res.status(200).json(
+        new ApiResponse(
+            200,
+            "Likes fetched successfullt",
+            {
+                likes,
+                page,
+                limit,
+                totalPages: Math.ceil(total / limit),
+                totalLikes: total
+            }
+        )
+    )
+})
+
+export {addPost, getAllPosts, getPost, updatePost, deletePost, getLikes}
