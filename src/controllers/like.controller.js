@@ -1,11 +1,11 @@
-import { Comment } from "../models/comment.model";
-import { Like } from "../models/like.model";
-import { Post } from "../models/post.model";
-import { ApiError } from "../utils/ApiError";
-import { ApiResponse } from "../utils/ApiResponse";
-import { asyncHandler } from "../utils/asyncHandler";
+import { Comment } from "../models/comment.model.js";
+import { Like } from "../models/like.model.js";
+import { Post } from "../models/post.model.js";
+import { ApiError } from "../utils/ApiError.js";
+import { ApiResponse } from "../utils/ApiResponse.js";
+import { asyncHandler } from "../utils/asyncHandler.js";
 
-const toggleLike = asyncHandler(async(req, res) => {
+const togglePostLike = asyncHandler(async(req, res) => {
     const {postId} = req.params
     const userId = req.user?._id
 
@@ -90,4 +90,4 @@ const toggleCommentLike = asyncHandler(async(req, res) => {
     )
 })
 
-export {toggleLike, toggleCommentLike}
+export {togglePostLike, toggleCommentLike}
