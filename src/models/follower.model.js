@@ -5,7 +5,7 @@ const followerSchema = new Schema({
         type: Schema.Types.ObjectId,
         ref: "User"
     },
-    followedTo: {
+    following: {
         type: Schema.Types.ObjectId,
         ref: "User"
     }
