@@ -33,7 +33,17 @@ const addComment = asyncHandler(async(req, res) => {
 })
 
 const getComments = asyncHandler(async(req, res) => {
-    const comments = await Comment.find({})
+    const {postId} = req.params
+    const post = await Post.findById(postId)
+
+    if (!post) {
+        throw new ApiError(400, "Post not found")
+    }
+
+    const comments = await Comment.find({
+        post
+    })
+    
     if (!comments) {
         throw new ApiError(400, "Unable to fetch comments")
     }

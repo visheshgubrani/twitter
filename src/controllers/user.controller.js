@@ -260,7 +260,7 @@ const updateCoverImg = asyncHandler(async(req, res) => {
     )
 })
 
-const getUserFollowers = asyncHandler(async(req, res) => {
+const getUserFollowers = asyncHandler(async(req, res) => { //jo jo merko follow kar reha hai
     const userId = req.params?.userId
 
     if (!mongoose.isValidObjectId(userId)) {
@@ -270,13 +270,13 @@ const getUserFollowers = asyncHandler(async(req, res) => {
     const followers = await Follower.aggregate([
         {
             $match: {
-                following: new mongoose.Types.ObjectId(userId)
+                followedBy: new mongoose.Types.ObjectId(userId)
             }
         },
         {
             $lookup: {
                 from: "users",
-                localField: "followers",
+                localField: "following",
                 foreignField: "_id",
                 as: "followerDetails"
             }
@@ -292,6 +292,7 @@ const getUserFollowers = asyncHandler(async(req, res) => {
             }
         }
     ])
+    // Add Pagination
 
     return res.status(200).json(
         new ApiResponse(200, "Followers fetched successfully", followers)
@@ -299,25 +300,23 @@ const getUserFollowers = asyncHandler(async(req, res) => {
 })
 
 
-const getUserFollowing = asyncHandler(async(req, res) => {
+const getUserFollowing = asyncHandler(async(req, res) => { //jis jis ko mai follow kar reha hu
     const userId = req.params?.userId //get userid from the request
-    const page = parseInt(req.query.page) || 1
-    const limit = parseInt(req.query.limit) || 10
 
     if (!mongoose.isValidObjectId(userId)) {
         throw new ApiError(400, "Invalid User Id")
     }
-
-    const aggregateQuery = Follower.aggregatePaginate([
+    
+    const following = Follower.aggregatePaginate([
         {
             $match: {
-                followers: mongoose.Types.ObjectId(userId)
+                following: mongoose.Types.ObjectId(userId)
             }
         },
         {
             $lookup: {
                 from: "users",
-                localField: "following",
+                localField: "followedBy",
                 foreignField: "_id",
                 as: "followingDetails"
             }
@@ -334,13 +333,9 @@ const getUserFollowing = asyncHandler(async(req, res) => {
         }
     ])
 
-    const options = {page, limit, sort: {
-        createdAt: -1
-    }}
 
-    const followingResults = await Follower.aggregatePaginate(aggregateQuery, options)
     return res.status(200).json(
-        new ApiResponse(200, "Fetched Following", followingResults)
+        new ApiResponse(200, "Fetched Following", following)
     )
 
 })
@@ -353,7 +348,7 @@ const getUserFollowersCount = asyncHandler(async(req, res) => {
     }
 
     const followersCount = await Follower.countDocuments({
-        following: new mongoose.Types.ObjectId(userId)
+        followedBy: new mongoose.Types.ObjectId(userId)
     })
 
     return res.status(200).json(
@@ -369,7 +364,7 @@ const getUserFollowingCount = asyncHandler(async(req, res) => {
     }
 
     const followingCount = await Follower.countDocuments({
-        followers: new mongoose.Types.ObjectId(userId)
+        following: new mongoose.Types.ObjectId(userId)
     })
 
     return res.status(200).json(

@@ -6,9 +6,9 @@ import { User } from "../models/user.model.js";
 
 const toggleFollow = asyncHandler(async(req, res) => {
     const {userId} = req.params //the user we want to follow
-    const currentUserId = req.user?._id //
+    const currentUserId = req.user?._id //our userId, the user doing the following
 
-    const user = await User.findById(userId)
+    const user = await User.findById(userId) 
     if (!user) {
         throw new ApiError(400, 'Please enter the correct userid')
     }
@@ -18,7 +18,7 @@ const toggleFollow = asyncHandler(async(req, res) => {
     }
     // find the follow
     const follow = await Follower.findOne({
-        followers: currentUserId, //
+        followedBy: currentUserId, //
         following: userId // following this userid bu current user
     })
 
@@ -31,8 +31,8 @@ const toggleFollow = asyncHandler(async(req, res) => {
     }
 
     await Follower.create({
-        followers: currentUserId,
-        following: userId
+        followedBy: currentUserId, //current user 
+        following: userId //from req.params
     })
 
     return res.status(200).json(
