@@ -11,7 +11,8 @@ import {
     updateUser,
     getUserFollowers,
     getUserFollowing, 
-    getUserFollowersCount
+    getUserFollowersCount,
+    getUserFollowingCount
     } from "../controllers/user.controller.js";
 import { upload } from "../middlewares/multer.middleware.js";
 import { verifyJWT } from "../middlewares/auth.middleware.js";
@@ -43,5 +44,6 @@ router.route("/update-profileimg").patch(verifyJWT, upload.single("coverImg") ,u
 router.route("/followers/:userId").get(verifyJWT ,getUserFollowers)
 router.route("/following/:userId").get(verifyJWT, getUserFollowing)
 router.route("/followers/count/:userId").get(verifyJWT, getUserFollowersCount)
+router.route("/following/count/:userId").get(verifyJWT, getUserFollowingCount)
 
 export {router as UserRouter}

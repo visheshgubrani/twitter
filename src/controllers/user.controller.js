@@ -364,7 +364,7 @@ const getUserFollowingCount = asyncHandler(async(req, res) => {
     }
 
     const followingCount = await Follower.countDocuments({
-        following: new mongoose.Types.ObjectId(userId)
+        followedBy: new mongoose.Types.ObjectId(userId)
     })
 
     return res.status(200).json(
