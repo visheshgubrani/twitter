@@ -1,106 +1,46 @@
-import mongoose from "mongoose";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { ApiError } from "../utils/ApiError.js";
 import { Follower } from "../models/follower.model.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
+import { User } from "../models/user.model.js";
 
-const getUserFollowers = asyncHandler(async(req, res) => {
-    const userId = req.params?.userId
-    const page = parseInt(req.query.page) || 1
-    const limit = parseInt(req.query.limit) || 10
+const toggleFollow = asyncHandler(async(req, res) => {
+    const {userId} = req.params //the user we want to follow
+    const currentUserId = req.user?._id //
 
-    if (!mongoose.isValidObjectId(userId)) {
-        throw new ApiError(400, "Invalid user Id")
+    const user = await User.findById(userId)
+    if (!user) {
+        throw new ApiError(400, 'Please enter the correct userid')
     }
 
-    const aggregateQuery = await Follower.aggregate([
-        {
-            $match: {
-                following: mongoose.Types.ObjectId(userId)
-            }
-        },
-        {
-            $lookup: {
-                from: "users",
-                localField: "followers",
-                foreignField: "_id",
-                as: "followerDetails"
-            }
-        },
-        {
-            $unwind: "followerDetails"
-        },
-        {
-            $project: {
-                _id: "$followerDetails._id",
-                username: "$followerDetails.username",
-                profileImg: "$followerDetails.profileImg"
-            }
-        }
-    ])
+    if (userId.toString() === currentUserId.toString()) {
+        throw new ApiError(400, "You cannot follow yourself")
+    }
+    // find the follow
+    const follow = await Follower.findOne({
+        followers: currentUserId, //
+        following: userId // following this userid bu current user
+    })
 
-    const options = {
-        page,
-        limit,
-        sort: {
-            createdAt: -1
-        }
+    if (follow) {
+        // Unfollow
+        await Follower.findByIdAndDelete(follow?._id)
+        return res.status(200).json(
+            new ApiResponse(200, "Unfollow Successful")
+        )
     }
 
-    const followerResults = await Follower.aggregatePaginate(aggregateQuery, options)
+    await Follower.create({
+        followers: currentUserId,
+        following: userId
+    })
 
     return res.status(200).json(
-        new ApiResponse(200, "Followers fetched successfully", followerResults)
-    )
-})
-
-const getUserFollowing = asyncHandler(async(req, res) => {
-    const userId = req.params?.userId //get userid from the request
-    const page = parseInt(req.query.page) || 1
-    const limit = parseInt(req.query.limit) || 10
-
-    if (!mongoose.isValidObjectId(userId)) {
-        throw new ApiError(400, "Invalid User Id")
-    }
-
-    const aggregateQuery = Follower.aggregatePaginate([
-        {
-            $match: {
-                followers: mongoose.Types.ObjectId(userId)
-            }
-        },
-        {
-            $lookup: {
-                from: "users",
-                localField: "following",
-                foreignField: "_id",
-                as: "followingDetails"
-            }
-        },
-        {
-            $unwind: "$followingDetails"
-        },
-        {
-            $project: {
-                _id: "$followingDetails._id",
-                username: "followingDetails.username",
-                profileImg: "$followingDetails.profileImg"
-            }
-        }
-    ])
-
-    const options = {page, limit, sort: {
-        createdAt: -1
-    }}
-
-    const followingResults = await Follower.aggregatePaginate(aggregateQuery, options)
-    return res.status(200).json(
-        new ApiResponse(200, "Fetched Following", followingResults)
+        new ApiResponse(200, "Followed Successfully", {})
     )
 
 })
 
 export {
-    getUserFollowers,
-    getUserFollowing
+    toggleFollow
 }

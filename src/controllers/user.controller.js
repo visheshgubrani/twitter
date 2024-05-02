@@ -5,6 +5,9 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 import { uploadOnCloudinary } from "../utils/cloudinary.js";
 import { destroyImg } from "../utils/destroyImg.js";
 import { generateTokens } from "../utils/generateTokens.js";
+import mongoose from "mongoose";
+import { Follower } from "../models/follower.model.js";
+
 
 const options = {
     httpOnly: true,
@@ -12,7 +15,7 @@ const options = {
 }
 
 const registerUser = asyncHandler(async(req, res) => {
-    const {fullName, username, email, password} = req.body
+    const {fullName, username, email, password, bio, link} = req.body
     if (!(fullName && username && email && password)) {
         throw new ApiError(400, "Please provide all the details")
     }
@@ -53,7 +56,9 @@ const registerUser = asyncHandler(async(req, res) => {
         email,
         password,
         profileImg,
-        coverImg
+        coverImg,
+        bio,
+        link
     })
 
     const createdUser = await User.findById(user._id).select("-password -refreshToken")
@@ -255,6 +260,122 @@ const updateCoverImg = asyncHandler(async(req, res) => {
     )
 })
 
+const getUserFollowers = asyncHandler(async(req, res) => {
+    const userId = req.params?.userId
+
+    if (!mongoose.isValidObjectId(userId)) {
+        throw new ApiError(400, "Invalid user Id")
+    }
+
+    const followers = await Follower.aggregate([
+        {
+            $match: {
+                following: new mongoose.Types.ObjectId(userId)
+            }
+        },
+        {
+            $lookup: {
+                from: "users",
+                localField: "followers",
+                foreignField: "_id",
+                as: "followerDetails"
+            }
+        },
+        {
+            $unwind: "$followerDetails"
+        },
+        {
+            $project: {
+                _id: "$followerDetails._id",
+                username: "$followerDetails.username",
+                profileImg: "$followerDetails.profileImg"
+            }
+        }
+    ])
+
+    return res.status(200).json(
+        new ApiResponse(200, "Followers fetched successfully", followers)
+    )
+})
+
+
+const getUserFollowing = asyncHandler(async(req, res) => {
+    const userId = req.params?.userId //get userid from the request
+    const page = parseInt(req.query.page) || 1
+    const limit = parseInt(req.query.limit) || 10
+
+    if (!mongoose.isValidObjectId(userId)) {
+        throw new ApiError(400, "Invalid User Id")
+    }
+
+    const aggregateQuery = Follower.aggregatePaginate([
+        {
+            $match: {
+                followers: mongoose.Types.ObjectId(userId)
+            }
+        },
+        {
+            $lookup: {
+                from: "users",
+                localField: "following",
+                foreignField: "_id",
+                as: "followingDetails"
+            }
+        },
+        {
+            $unwind: "$followingDetails"
+        },
+        {
+            $project: {
+                _id: "$followingDetails._id",
+                username: "followingDetails.username",
+                profileImg: "$followingDetails.profileImg"
+            }
+        }
+    ])
+
+    const options = {page, limit, sort: {
+        createdAt: -1
+    }}
+
+    const followingResults = await Follower.aggregatePaginate(aggregateQuery, options)
+    return res.status(200).json(
+        new ApiResponse(200, "Fetched Following", followingResults)
+    )
+
+})
+
+const getUserFollowersCount = asyncHandler(async(req, res) => {
+    const userId = req.params?.userId
+
+    if (!mongoose.isValidObjectId(userId)) {
+        throw new ApiError(400, "Invalid UserId")
+    }
+
+    const followersCount = await Follower.countDocuments({
+        following: new mongoose.Types.ObjectId(userId)
+    })
+
+    return res.status(200).json(
+        new ApiResponse(200, "Followers Count Fetched Successfully", followersCount)
+    )
+})
+
+const getUserFollowingCount = asyncHandler(async(req, res) => {
+    const userId = req.params?.userId
+
+    if (!mongoose.isValidObjectId(userId)) {
+        throw new ApiError(400, "Invalid User")
+    }
+
+    const followingCount = await Follower.countDocuments({
+        followers: new mongoose.Types.ObjectId(userId)
+    })
+
+    return res.status(200).json(
+        new ApiResponse(200, "Following count fetched successfully", followingCount)
+    )
+})
 export {
     registerUser,
     loginUser,
@@ -265,5 +386,8 @@ export {
     updateCoverImg,
     updateProfileImg,
     getCurrentUser,
-
+    getUserFollowers,
+    getUserFollowing,
+    getUserFollowersCount,
+    getUserFollowingCount
 }

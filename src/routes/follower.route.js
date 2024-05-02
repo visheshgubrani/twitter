@@ -1,10 +1,9 @@
 import { Router } from "express";
-import { getUserFollowers, getUserFollowing } from "../controllers/follower.controller";
-import { verifyJWT } from "../middlewares/auth.middleware";
+import { verifyJWT } from "../middlewares/auth.middleware.js";
+import { toggleFollow } from "../controllers/follower.controller.js";
 
 const router = Router()
 
-router.route("/followers/:userId").get(verifyJWT ,getUserFollowers)
-router.route("/following/:userId").get(verifyJWT, getUserFollowing)
+router.route('/user/:userId').post(verifyJWT, toggleFollow)
 
 export {router as followerRouter}
