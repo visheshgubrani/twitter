@@ -5,6 +5,8 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 import { uploadOnCloudinary } from "../utils/cloudinary.js";
 import { destroyImg } from "../utils/destroyImg.js";
 import { Like } from "../models/like.model.js";
+import { Follower } from "../models/follower.model.js";
+import mongoose from "mongoose";
 
 const addPost = asyncHandler(async(req, res) => {
     const {content} = req.body
@@ -36,7 +38,7 @@ const addPost = asyncHandler(async(req, res) => {
     )
 })
 
-const getAllPosts = asyncHandler(async(req, res) => {
+const getAllPosts = asyncHandler(async(req, res) => { //update it to particular user
     const posts = await Post.find({})
     if (!posts) {
         throw new ApiError(400, "Posts not found")
@@ -156,4 +158,36 @@ const getLikes = asyncHandler(async(req, res) => {
     )
 })
 
-export {addPost, getAllPosts, getPost, updatePost, deletePost, getLikes}
+const getFollowersPost = asyncHandler(async(req, res) => {
+    const userId = req.user?._id
+    const posts = await Follower.aggregate([
+        {
+            $match: {
+                followedBy: new mongoose.Types.ObjectId(userId)
+            }
+        },
+        {
+            $lookup: {
+                from: 'posts',
+                localField: 'following',
+                foreignField: 'user',
+                as: 'userPosts'
+            }
+        },
+        {
+            $unwind: '$userPosts'
+        },
+        {
+            $sort: {
+                'userPosts.createdAt': -1
+            }
+        }
+    ])
+
+    return res.status(200).json(
+        new ApiResponse(200, "Posts from followed users fetched successfully", posts)
+    )
+
+})
+
+export {addPost, getAllPosts, getPost, updatePost, deletePost, getLikes, getFollowersPost}
