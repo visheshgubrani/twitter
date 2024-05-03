@@ -40,7 +40,7 @@ router.route("/:username").get(getUser) //aggregate the info (username, posts, f
 router.route("/update-user").patch(verifyJWT, updateUser)
 router.route("/update-pass").patch(verifyJWT, updatePassword)
 router.route("/update-coverimg").patch(verifyJWT,upload.single("coverImg") ,updateCoverImg)
-router.route("/update-profileimg").patch(verifyJWT, upload.single("coverImg") ,updateProfileImg)
+router.route("/update-profileimg").patch(verifyJWT, upload.single("profileImg") ,updateProfileImg)
 router.route("/followers/:userId").get(verifyJWT ,getUserFollowers)
 router.route("/following/:userId").get(verifyJWT, getUserFollowing)
 router.route("/followers/count/:userId").get(verifyJWT, getUserFollowersCount)

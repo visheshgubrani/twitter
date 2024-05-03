@@ -198,7 +198,7 @@ const getCurrentUser = asyncHandler(async(req, res) => {
 
 const updateProfileImg = asyncHandler(async(req, res) => {
     const profileImgLocalPath = req.file?.path
-    if(!profileImg) {
+    if(!profileImgLocalPath) {
         throw new ApiError(400, "Please provide the profile Img")
     }
 
@@ -206,7 +206,7 @@ const updateProfileImg = asyncHandler(async(req, res) => {
         const oldProfileImg = req.user.profileImg.split("/").pop().split(".")[0]
         await destroyImg(oldProfileImg)
     }
-
+    
     const profileImg = await uploadOnCloudinary(profileImgLocalPath)
 
     if(!profileImg.url) {
@@ -270,13 +270,13 @@ const getUserFollowers = asyncHandler(async(req, res) => { //jo jo merko follow 
     const followers = await Follower.aggregate([
         {
             $match: {
-                followedBy: new mongoose.Types.ObjectId(userId)
+                following: new mongoose.Types.ObjectId(userId)
             }
         },
         {
             $lookup: {
                 from: "users",
-                localField: "following",
+                localField: "followedBy",
                 foreignField: "_id",
                 as: "followerDetails"
             }
@@ -307,16 +307,16 @@ const getUserFollowing = asyncHandler(async(req, res) => { //jis jis ko mai foll
         throw new ApiError(400, "Invalid User Id")
     }
     
-    const following = Follower.aggregatePaginate([
+    const following = await Follower.aggregate([
         {
             $match: {
-                following: mongoose.Types.ObjectId(userId)
+                followedBy: new mongoose.Types.ObjectId(userId)
             }
         },
         {
             $lookup: {
                 from: "users",
-                localField: "followedBy",
+                localField: "following",
                 foreignField: "_id",
                 as: "followingDetails"
             }
@@ -327,7 +327,7 @@ const getUserFollowing = asyncHandler(async(req, res) => { //jis jis ko mai foll
         {
             $project: {
                 _id: "$followingDetails._id",
-                username: "followingDetails.username",
+                username: "$followingDetails.username",
                 profileImg: "$followingDetails.profileImg"
             }
         }
@@ -348,7 +348,7 @@ const getUserFollowersCount = asyncHandler(async(req, res) => {
     }
 
     const followersCount = await Follower.countDocuments({
-        followedBy: new mongoose.Types.ObjectId(userId)
+        following: new mongoose.Types.ObjectId(userId)
     })
 
     return res.status(200).json(
