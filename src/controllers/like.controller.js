@@ -1,5 +1,6 @@
 import { Comment } from "../models/comment.model.js";
 import { Like } from "../models/like.model.js";
+import { Notification } from "../models/notification.model.js";
 import { Post } from "../models/post.model.js";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
@@ -42,6 +43,15 @@ const togglePostLike = asyncHandler(async(req, res) => {
         }
     })
 
+    const notification = await Notification.create({
+        from: userId,
+        to: post.user?._id,
+        type: "like"
+    })
+
+    if (!notification) {
+        throw new ApiError(400, "Failed to send notification")
+    }
     res.status(200).json(
         new ApiResponse(200, "Successfully Liked a post", {})
     )

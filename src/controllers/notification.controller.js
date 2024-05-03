@@ -30,14 +30,14 @@ const deleteNotification = asyncHandler(async (req, res) => {
     //check if the user can delete the notificatoin
     // 
     const notificationId = req.params?.notificationId
-    const userID = req.user?._id
+    const userId = req.user?._id
 
     const notification = await Notification.findById(notificationId)
     if (!notification) {
         throw new ApiError(400, "Notification not found")
     }
 
-    if (notification.to.toString() !== userID.toString()) {
+    if (notification.to.toString() !== userId.toString()) {
         throw new ApiError(400, "User not authenticated to delete the notification")
     }
 

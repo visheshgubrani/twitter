@@ -3,6 +3,7 @@ import { ApiError } from "../utils/ApiError.js";
 import { Follower } from "../models/follower.model.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { User } from "../models/user.model.js";
+import { Notification } from "../models/notification.model.js";
 
 const toggleFollow = asyncHandler(async(req, res) => {
     const {userId} = req.params //the user we want to follow
@@ -30,10 +31,24 @@ const toggleFollow = asyncHandler(async(req, res) => {
         )
     }
 
-    await Follower.create({
+    const newFollow = await Follower.create({
         followedBy: currentUserId, //current user 
         following: userId //from req.params
     })
+
+    if(!newFollow) {
+        throw new ApiError(400, "Failed to follow the user")
+    }
+
+    const notification = await Notification.create({
+        from: currentUserId,
+        to: userId,
+        type: "Follow"
+    })
+
+    if (!notification) {
+        throw new ApiError(400, "Failed to send notification")
+    }
 
     return res.status(200).json(
         new ApiResponse(200, "Followed Successfully", {})
